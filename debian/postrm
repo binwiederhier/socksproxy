@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+	remove)
+		update-rc.d -f socksproxy remove || true	
+		
+		rm -rf /var/lib/socksproxy 2> /dev/null || true
+		rm -rf /var/run/socksproxy 2> /dev/null || true
+
+		userdel socksproxy 2> /dev/null || true
+			
+		;;
+		
+	upgrade|deconfigure|failed-upgrade)
+		;;
+
+	*)
+		echo "postrm called with unknown argument \`$1'" >&2
+		exit 0
+		;;
+esac
+
+#DEBHELPER#
+
+exit 0

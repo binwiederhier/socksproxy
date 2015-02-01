@@ -1,0 +1,207 @@
+#!/bin/bash
+
+CONFIGFILE=/etc/socksproxy.conf
+PIDFILE=/var/run/socksproxy/socksproxy.pid
+STATEFILE=/var/run/socksproxy/socksproxy.state
+
+DEFAULT_PROXYPORT=1080
+
+if [ "$(id -u)" != "0" ]; then
+	echo "socksproxy: Need to be root"
+	exit 11
+fi
+
+if [ ! -f $CONFIGFILE ]; then
+        echo "FATAL: Config file does not exist at $CONFIGFILE"
+        exit 1
+fi
+
+read_config() {
+	echo $(read_setting_from_file $CONFIGFILE $1 $2)
+}
+
+read_state() {
+	echo $(read_setting_from_file $STATEFILE $1 $2)
+}
+
+read_setting_from_file() {
+	if [ -f $1 ]; then
+		value=$(cat $1 | grep -E "^$2=" | sed "s/$2=//")
+
+		if [ ! -z "$value" ]; then
+			echo $value
+		elif [ ! -z "$3" ]; then
+			echo $3
+		fi	
+	elif [ ! -z "$3" ]; then
+		echo $3
+	fi
+}
+
+ssh_start() {
+	pid=$(get_pid)
+
+	if [ ! -z "$pid" ]; then
+		echo "socksproxy already running at PID $pid."
+	else
+		proxyport=$(read_config proxyport $DEFAULT_PROXYPORT)
+		sshport=$(ssh_get_port)
+		
+		echo -n "Starting socksproxy on port $proxyport ... "
+		start-stop-daemon --start --background --make-pidfile --oknodo --user socksproxy --chuid socksproxy --pidfile $PIDFILE \
+			--exec /usr/bin/ssh -- -N -o StrictHostKeyChecking=no -D 0.0.0.0:$proxyport -p $sshport socksproxy@localhost
+
+		sleep 1
+		pid=$(get_pid)
+
+        	if [ ! -z "$pid" ]; then
+			iptables_remove
+        		iptables_add
+        		
+        		cp $CONFIGFILE $STATEFILE
+        		
+                	echo "Started with PID $pid."
+                	
+			allowedips=$(read_config allowedips)
+	
+			if [ -z "$allowedips" ]; then   
+				echo ""              	
+				echo "WARNING: No allowed IP address specified. All incoming requested will be"
+				echo "         rejected. Edit 'allowedips' in $CONFIGFILE to fix that."
+				echo ""              	
+			fi
+		else 
+			echo "Failed."
+		fi
+	fi
+}
+
+ssh_stop() {
+	pid=$(get_pid)
+
+        if [ ! -z "$pid" ]; then
+		echo -n "Stopping socksproxy ... "
+		kill $pid
+		
+		sleep 1
+		pid=$(get_pid)
+
+		if [ -z "$pid" ]; then
+			iptables_remove
+			rm $STATEFILE
+			
+			echo "Stopped."
+		else
+			echo "Failed. Still running at PID $pid."
+			exit 5
+		fi
+	else 
+		echo "socksproxy is not running."
+	fi
+}
+
+ssh_status() {
+	pid=$(get_pid)
+
+	if [ ! -z "$pid" ]; then
+		echo "sockyproxy is running at PID $pid."
+	else 
+		echo "socksproxy is not running."
+	fi
+}
+
+ssh_get_port() {
+	if [ -f /etc/ssh/sshd_config ]; then
+		sshport=$(cat /etc/ssh/sshd_config | grep -E "^Port " | sed "s/Port //")
+
+		if [ ! -z "$sshport" ]; then
+			echo $sshport
+		else
+			echo 22
+		fi
+	else
+		echo 22
+	fi
+}
+	
+get_pid() {
+	if [ -f $PIDFILE ]; then
+		pid=$(cat $PIDFILE)
+		running=$(ps hp $pid)
+
+		if [ ! -z "$running" ]; then
+			echo $pid
+		fi
+	fi
+}
+
+iptables_add() {
+	proxyport=$(read_config proxyport $DEFAULT_PROXYPORT)
+	allowedips=$(read_config allowedips)
+	
+	if [ -z "$proxyport" ]; then
+		echo "FATAL: Invalid config file. Proxy port empty. EXITING."
+		exit 9
+	fi
+
+	if [ ! -z "$allowedips" ]; then 
+		for allowedip in $allowedips; do
+			if [ -z "$allowedip" ]; then
+				echo "FATAL: Invalid config file. Allowed IP empty. EXITING."
+				exit 10
+			fi
+				
+			iptables -A INPUT --src $allowedip -p tcp --dport $proxyport -j ACCEPT
+		done
+	fi		
+	
+	iptables -A INPUT -p tcp --dport $proxyport -j REJECT
+}
+
+iptables_remove() {
+	if [ -f $STATEFILE ]; then
+		proxyport=$(read_state proxyport $DEFAULT_PROXYPORT)
+		allowedips=$(read_state allowedips)	
+
+		if [ -z "$proxyport" ]; then
+			echo "FATAL: Invalid state file. Proxy port empty. EXITING."
+			exit 7
+		fi
+	
+		if [ ! -z "$allowedips" ]; then 
+			for allowedip in $allowedips; do		
+				if [ -z "$allowedip" ]; then
+					echo "FATAL: Invalid state file. Allowed IP empty. EXITING."
+					exit 8
+				fi
+			
+				iptables -D INPUT --src $allowedip -p tcp --dport $proxyport -j ACCEPT 2> /dev/null
+			done
+		fi		
+	
+		iptables -D INPUT -p tcp --dport $proxyport -j REJECT 2> /dev/null
+	fi
+}
+
+case "$1" in
+	start)
+		ssh_start
+		;;
+
+	stop)
+		ssh_stop
+		;;
+
+	status)
+		ssh_status
+		;;
+
+	restart)
+		ssh_stop
+		ssh_start
+		;;
+
+	*)
+		echo "Usage: socksproxy (start|stop|status|restart)"
+		;;
+esac

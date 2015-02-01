@@ -1,0 +1,57 @@
+#!/bin/sh
+set -e
+
+create_user() {
+	echo -n "Creating socksproxy user ... "
+	
+	if [ -z "$(id socksproxy -u 2> /dev/null)" ]; then
+		useradd -s /bin/bash -d /var/lib/socksproxy -m socksproxy 2> /dev/null
+		echo "Ok"
+	else
+		echo "Exists"
+	fi
+	
+	mkdir /var/run/socksproxy 2> /dev/null || true
+	chown socksproxy /var/run/socksproxy || true
+}
+
+generate_keypair() {
+	echo -n "Generating socksproxy keypair ... "
+
+	if [ ! -f /var/lib/socksproxy/.ssh/id_rsa ]; then		
+		sudo -u socksproxy ssh-keygen -t rsa -N "" -f /var/lib/socksproxy/.ssh/id_rsa > /dev/null 2>&1
+		sudo -u socksproxy sh -c "cat /var/lib/socksproxy/.ssh/id_rsa.pub >> /var/lib/socksproxy/.ssh/authorized_keys"
+	
+		echo "Ok"
+	else
+		echo "Exists"
+	fi
+}
+
+update_rcd_init() {
+	echo -n "Adding socksproxy to startup scripts ... "
+	update-rc.d socksproxy defaults > /dev/null 2>&1
+	echo "Ok"
+}
+
+case "$1" in
+	configure)
+		create_user
+		generate_keypair		
+		update_rcd_init
+		;;
+
+	upgrade|abort-upgrade|abort-remove)
+		;;
+
+	*)
+		echo "postinst called with unknown argument \`$1'" >&2
+		exit 0
+		;;
+esac
+
+#DEBHELPER#
+
+exit 0
+
+
