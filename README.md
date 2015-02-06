@@ -20,6 +20,7 @@ Installation
 Dependencies are *openssh-server* and *iptables*, so be sure to have those installed.
 On Debian-based systems: Either download a `.deb`-file from the [release page](https://github.com/binwiederhier/socksproxy/releases) or compile it yourself:
 ```bash
+$ sudo apt-get install devscripts  # for 'debuild'
 $ make
 $ sudo dpkg -i build/*.deb
 ```
