@@ -18,17 +18,21 @@ Much like a regular HTTP(S) proxy, a SOCKS proxy can be used to redirect/tunnel 
 Installation
 ------------
 Dependencies are *openssh-server* and *iptables*, so be sure to have those installed.
-On Debian-based systems: Either download a `.deb`-file from the [release page](https://github.com/binwiederhier/socksproxy/releases) or compile it yourself:
+
+**Debian-based systems:**
+1. Either download a `.deb`-file from the [release page](https://github.com/binwiederhier/socksproxy/releases)
+2. Or: Make the `.deb`-file yourself:
 ```bash
 $ sudo apt-get install devscripts  # for 'debuild'
-$ make
+$ make clean deb
 $ sudo dpkg -i build/*.deb
 ```
 
-Manually:
+**Other Linux systems:**
+Manually install it like this:
 ```bash
-$ sudo cp files/sbin/* /sbin
-$ sudo cp files/etc/* /etc
+$ sudo make install
+$ sudo make uninstall # To remove
 ```
 
 Usage

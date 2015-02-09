@@ -1,4 +1,10 @@
-socksproxy (0.1) lucid precise trusty; urgency=low
+socksproxy (0.1.1) lucid precise trusty; urgency=low
+
+  * Added 'make install|uninstall' target
+
+ -- Philipp Heckel <philipp.heckel@gmail.com>  Mon, 9 Feb 2015 10:12:12 +0100
+ 
+socksproxy (0.1.0) lucid precise trusty; urgency=low
 
   * First release
 

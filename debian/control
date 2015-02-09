@@ -6,7 +6,7 @@ Standards-Version: 3.9.5
 Build-Depends: debhelper (>=7)
 
 Package: socksproxy
-Architecture: any
+Architecture: all
 Depends: iptables, openssh-server, openssh-client, dpkg (>= 1.15), ${misc:Depends}
 Description: Simple SOCKS proxy
  Creates a simple SOCKS proxy on the local machine. 
