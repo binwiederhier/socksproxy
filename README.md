@@ -19,8 +19,8 @@ Installation
 ------------
 Dependencies are *openssh-server* and *iptables*, so be sure to have those installed.
 
-**Debian-based systems:**
-1. Either download a `.deb`-file from the [release page](https://github.com/binwiederhier/socksproxy/releases)
+**Debian-based systems:**   
+1. Either download a `.deb`-file from the [release page](https://github.com/binwiederhier/socksproxy/releases)   
 2. Or: Make the `.deb`-file yourself:
 ```bash
 $ sudo apt-get install devscripts  # for 'debuild'
