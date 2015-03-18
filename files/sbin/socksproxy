@@ -47,6 +47,8 @@ ssh_start() {
 		proxyport=$(read_config proxyport $DEFAULT_PROXYPORT)
 		sshport=$(ssh_get_port)
 		
+		mkdir -p "$(dirname "$PIDFILE")" 2> /dev/null
+
 		echo -n "Starting socksproxy on port $proxyport ... "
 		start-stop-daemon --start --background --make-pidfile --oknodo --user socksproxy --chuid socksproxy --pidfile $PIDFILE \
 			--exec /usr/bin/ssh -- -N -o StrictHostKeyChecking=no -D 0.0.0.0:$proxyport -p $sshport socksproxy@localhost

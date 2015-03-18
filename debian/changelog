@@ -1,3 +1,9 @@
+socksproxy (0.1.2) lucid precise trusty; urgency=low
+
+  * Fixed /var/run/socksproxy directory does not exist
+
+ -- Philipp Heckel <philipp.heckel@gmail.com>  Wed, 18 Mar 2015 20:20:00 +0100
+ 
 socksproxy (0.1.1) lucid precise trusty; urgency=low
 
   * Added 'make install|uninstall' target
