@@ -21,11 +21,13 @@ Dependencies are *openssh-server* and *iptables*, so be sure to have those insta
 
 **Debian-based systems:**   
 1. Either download a `.deb`-file from the [release page](https://github.com/binwiederhier/socksproxy/releases)   
-2. Or: Make the `.deb`-file yourself:
+2. Or: Add my [Debian/APT archive](http://archive.philippheckel.com/apt/):
+
 ```bash
-$ sudo apt-get install devscripts  # for 'debuild'
-$ make clean deb
-$ sudo dpkg -i build/*.deb
+wget -qO - http://archive.philippheckel.com/apt/Release.key | sudo apt-key add -
+sudo sh -c "echo deb http://archive.philippheckel.com/apt/release/ release main > /etc/apt/sources.list.d/archive.philippheckel.com.list"
+sudo apt-get update
+sudo apt-get install socksproxy
 ```
 
 **Other Linux systems:**
@@ -56,3 +58,11 @@ Starting socksproxy on port 1080 ... Started with PID 15761.
 
 You can now add it to your browser / operating system config and you are ready to surf via your proxy host!
 
+Build
+-----
+To build the `.deb` archive yourself, run the following commands:
+```bash
+$ sudo apt-get install devscripts  # for 'debuild'
+$ make clean deb
+$ sudo dpkg -i build/*.deb
+```
